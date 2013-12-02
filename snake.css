@@ -3,11 +3,13 @@
 	top:50%;
 	left:50%;
 	display: none;
+	width: 200px;
 }
 #gameEnded {
 	color: white;
 	font-size: 200%;
 	position: absolute;
+	color: white;
 	margin-left: -50%;
 	margin-top:-50%;
 	z-index: 1000;

@@ -30,6 +30,18 @@ interface CoordinatePair {
 	y:number;
 }
 
+function makeRange(begin:number, end?:number) {
+	if (end == undefined || end == null){
+		end = begin;
+		begin = 0;
+	}
+	var res = new Array(end-begin);
+	for (var i=begin;i<end;i++) {
+		res.push(i);
+	}
+	return res;
+}
+
 
 class TurnList {
 	turns:any={};
@@ -72,15 +84,32 @@ class SnakeComponent implements Drawable {
 	getCoords() {
 		return {x:this.x, y:this.y};
 	}
+	willCollide() {
+		var nextX = this.getNextX();
+		var nextY = this.getNextY();
+		if (nextX < 0 || nextX > PLAYING_WIDTH || nextY < 0 || nextY > PLAYING_HEIGHT) {
+			return true
+		}
+		var comp:SnakeComponent;
+
+		for (var i=0;i<this.snake.length;i++) {
+			comp = this.snake.components[i];
+			if (comp == this) continue;
+			if (comp.x == nextX || comp.y == nextY) {
+				return true;
+			}
+		}
+		return false;
+	}
 	move() {
 		var nextX:number, nextY:number;
 		nextX = this.getNextX();
 		nextY = this.getNextY();
 		
-		if (nextX < 0 || nextX > PLAYING_WIDTH || nextY < 0 || nextY > PLAYING_HEIGHT) {
+		if (this.willCollide()) {
 			return false;
 		}
-		this.setCoords(this.getNextX(), this.getNextY());
+		this.setCoords(nextX, nextY);
 		return true;
 	}
 	getNextX() {
@@ -168,16 +197,22 @@ class Snake implements Drawable {
 	// }
 	move(coords?:CoordinatePair) {
 		var direction:number;
-		$.each(this.components, function(i:number, component) {
+		var component:SnakeComponent;
+		for (var i=0;i<this.length;i++) {
+			component = this.components[i];
 			direction = this.turns.turnForCoord(component.x, component.y);
 			if (direction) {
 				component.direction = direction;
 			}
-			component.move();
+			var moveSuccessful:boolean = component.move();
+			if (!moveSuccessful) {
+				return false;
+			}
 			if (i == 0) {
 				this.turns.dropTurn(component.x, component.y);
 			}
-		}.bind(this));
+		};
+		return true;
 		// if (coords) {
 		// 	this.x = coords.x;
 		// 	this.y = coords.y;
@@ -211,6 +246,10 @@ class SnakeGame {
 			this.human.direction = (e.keyCode);
 		}
 	}
+	endGame(player:Snake) {
+		DISABLED = true;
+		$("#gameEnded-wrapper").show();
+	}
 	render() {
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
@@ -220,13 +259,14 @@ class SnakeGame {
 
 		for (var i in this.players) {
 			if (!DISABLED) {
-				this.players[i].move();
+				var moveSuccessful:boolean = this.players[i].move();
+				if (!moveSuccessful) {
+					this.endGame(this.players[i]);
+				}
 			}
 			this.players[i].render();
 		}
-		// if (this.human.willPassWall()) {
-		// 	return false;
-		// }
+
 		if (!DISABLED) {
 			window.setTimeout(function() {
 				window.requestAnimationFrame(this.render.bind(this))
