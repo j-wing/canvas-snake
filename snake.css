@@ -1,0 +1,19 @@
+#gameEnded-wrapper {
+	position:absolute;
+	top:50%;
+	left:50%;
+	display: none;
+}
+#gameEnded {
+	color: white;
+	font-size: 200%;
+	position: absolute;
+	margin-left: -50%;
+	margin-top:-50%;
+	z-index: 1000;
+}
+
+canvas {
+	position: absolute;
+	z-index: 1;
+}
