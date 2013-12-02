@@ -31,6 +31,14 @@ function makeRange(begin, end) {
     return res;
 }
 
+function randInt(min, max) {
+    if (max == null) {
+        max = min;
+        min = 0;
+    }
+    return min + Math.floor(Math.random() * (max - min + 1));
+}
+
 var TurnList = (function () {
     function TurnList() {
         this.turns = {};
@@ -89,7 +97,7 @@ var SnakeComponent = (function () {
             comp = this.snake.components[i];
             if (comp == this)
                 continue;
-            if (comp.x == nextX || comp.y == nextY) {
+            if (comp.getNextX() == nextX && comp.getNextY() == nextY) {
                 return true;
             }
         }

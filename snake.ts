@@ -42,6 +42,13 @@ function makeRange(begin:number, end?:number) {
 	return res;
 }
 
+function randInt(min:number, max?:number) {
+	if (max == null) {
+		max = min;
+		min = 0;
+	}
+	return min + Math.floor(Math.random() * (max - min + 1));
+}
 
 class TurnList {
 	turns:any={};
@@ -95,7 +102,7 @@ class SnakeComponent implements Drawable {
 		for (var i=0;i<this.snake.length;i++) {
 			comp = this.snake.components[i];
 			if (comp == this) continue;
-			if (comp.x == nextX || comp.y == nextY) {
+			if (comp.getNextX() == nextX && comp.getNextY() == nextY) {
 				return true;
 			}
 		}
