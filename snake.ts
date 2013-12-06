@@ -13,6 +13,9 @@ OPPOSITES[DIRECTIONS.DOWN] = DIRECTIONS.UP;
 OPPOSITES[DIRECTIONS.LEFT] = DIRECTIONS.RIGHT;
 OPPOSITES[DIRECTIONS.RIGHT] = DIRECTIONS.LEFT;
 
+var VERTICALS:Array = [DIRECTIONS.UP, DIRECTIONS.DOWN];
+var HORIZONTALS:Array = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT];
+
 var PLAYING_WIDTH:number = window.screen.width;
 var PLAYING_HEIGHT:number = window.screen.height;
 var SNAKE_BLOCK_BASE:number = 10;
@@ -56,7 +59,6 @@ class TurnList {
 		if (!this.turns[x]) {
 			this.turns[x] = {};
 		}
-		console.log("adding turn at ", x, y);
 		this.turns[x][y] = direction;
 	}
 	dropTurn(x:number, y:number) {
@@ -78,8 +80,12 @@ class TurnList {
 class SnakeComponent implements Drawable {
 	direction:number=DIRECTIONS.RIGHT;
 	context:any;
-	constructor(public snake:Snake, public pos:number, public x:number, public y:number, public color?:string) {
+	constructor(public snake:Snake, public pos:number, 
+				public x:number, public y:number, public color?:string, direction?:number) {
 		this.context = this.snake.context;
+		if (direction != null) {
+			this.direction = direction
+		}
 		if (!this.color) {
 			this.color = "white";
 		}
@@ -95,6 +101,7 @@ class SnakeComponent implements Drawable {
 		var nextX = this.getNextX();
 		var nextY = this.getNextY();
 		if (nextX < 0 || nextX > PLAYING_WIDTH || nextY < 0 || nextY > PLAYING_HEIGHT) {
+			window.game.log("Snake exceeded playing area")
 			return true
 		}
 		var comp:SnakeComponent;
@@ -103,12 +110,28 @@ class SnakeComponent implements Drawable {
 			comp = this.snake.components[i];
 			if (comp == this) continue;
 			if (comp.getNextX() == nextX && comp.getNextY() == nextY) {
+				console.log("Collision between snake components: ", this, comp);
 				return true;
 			}
 		}
 		return false;
 	}
+	willGetFood() {
+		var f:Food;
+		for (var i in window.game.foods) {
+			f = window.game.foods[i];
+			if (f.x == this.getNextX() && f.y == this.getNextY()) {
+				return f;
+			}
+		}
+		return null;
+	}
 	move() {
+		var t = this.snake.turns.turnForCoord(this.x, this.y);
+		if (t) {
+			this.direction = t;
+		}
+
 		var nextX:number, nextY:number;
 		nextX = this.getNextX();
 		nextY = this.getNextY();
@@ -116,7 +139,12 @@ class SnakeComponent implements Drawable {
 		if (this.willCollide()) {
 			return false;
 		}
+
 		this.setCoords(nextX, nextY);
+		var f:Food = this.willGetFood();
+		if (f) {
+			this.snake.eatFood(f);
+		}
 		return true;
 	}
 	getNextX() {
@@ -142,6 +170,20 @@ class SnakeComponent implements Drawable {
 		}
 
 	}
+	getNextCoords() {
+		var nextX, nextY;
+		nextX = this.getNextX();
+		nextY = this.getNextY();
+		var d = this.snake.turns.turnForCoord(nextX, nextY);
+		if (d) {
+			var old = this.direction;
+			this.direction = d;
+			nextX = this.getNextX();
+			nextY = this.getNextY();
+			this.direction = old;
+		}
+		return [nextX, nextY];
+	}
 	render() {
 		this.context.fillStyle = this.color;
 		this.context.fillRect(this.x, this.y, SNAKE_BLOCK_BASE, SNAKE_BLOCK_BASE);
@@ -166,10 +208,15 @@ class Snake implements Drawable {
 		
 		this.components = [];
 		for (var i=0;i<this.length;i++) {
-			this.components.push(new SnakeComponent(this, i, (this.length*SNAKE_BLOCK_SIDE)-i*SNAKE_BLOCK_SIDE, 0));
+			this.createComponent(i);
 		}
 		this.leadComponent = this.components[0];
-		console.log(this)
+	}
+	createComponent(pos:number) {
+		this.addComponent(new SnakeComponent(this, pos, (this.length*SNAKE_BLOCK_SIDE)-pos*SNAKE_BLOCK_SIDE, 0));
+	}
+	addComponent(component:SnakeComponent) {
+		this.components.push(component);
 	}
 	calculateSnakeWidth() {
 		return this.length * (SNAKE_BLOCK_SIDE);
@@ -185,32 +232,15 @@ class Snake implements Drawable {
 		}
 		this.turns.addTurn(this.leadComponent.x, this.leadComponent.y, dir);
 	}
-	// willPassWall() {
-	// 	if (this.direction == DIRECTIONS.UP && this.y+this.totalLength+SNAKE_BLOCK_SIDE < 0) {
-	// 		return true;
-	// 	}
-	// 	else if (this.direction == DIRECTIONS.DOWN && this.y+this.totalLength+SNAKE_BLOCK_SIDE > window.innerHeight) {
-	// 		return true;
-	// 	}
-	// 	else if (this.direction == DIRECTIONS.LEFT && this.x-SNAKE_BLOCK_SIDE < 0) {
-	// 		return true;
-	// 	}
-	// 	else if (this.direction == DIRECTIONS.RIGHT && this.x+this.totalLength+SNAKE_BLOCK_SIDE > window.innerWidth) {
-	// 		return true;
-	// 	}
-	// 	else {
-	// 		return false;
-	// 	}
-	// }
 	move(coords?:CoordinatePair) {
 		var direction:number;
 		var component:SnakeComponent;
 		for (var i=0;i<this.length;i++) {
 			component = this.components[i];
-			direction = this.turns.turnForCoord(component.x, component.y);
-			if (direction) {
-				component.direction = direction;
-			}
+			// direction = this.turns.turnForCoord(component.x, component.y);
+			// if (direction) {
+			// 	component.direction = direction;
+			// }
 			var moveSuccessful:boolean = component.move();
 			if (!moveSuccessful) {
 				return false;
@@ -220,12 +250,50 @@ class Snake implements Drawable {
 			}
 		};
 		return true;
-		// if (coords) {
-		// 	this.x = coords.x;
-		// 	this.y = coords.y;
-		// }
-		// else {
-		// }
+	}
+	eatFood(food:Food) {
+		window.game.foods.splice(window.game.foods.indexOf(food), 1);
+		var last = this.components[this.length-1];
+		var x:number, y:number;
+
+		switch (last.direction) {
+			case DIRECTIONS.UP:
+				x = last.x;
+				y = last.y+SNAKE_BLOCK_SIDE;
+				break;
+			case DIRECTIONS.DOWN:
+				x = last.x;
+				y = last.y-SNAKE_BLOCK_SIDE;
+				break;
+			case DIRECTIONS.LEFT:
+				x = last.x - SNAKE_BLOCK_SIDE;
+				y = last.y;
+				break;
+			case DIRECTIONS.RIGHT:
+				x = last.x + SNAKE_BLOCK_SIDE;
+				y = last.y;
+				break;
+		}
+
+		this.addComponent(new SnakeComponent(this, this.length, x, y, "white", last.direction));
+		this.length += 1;
+	}
+}
+
+class Food implements Drawable {
+	x:number;
+	y:number;
+	constructor(public context) {
+		this.x = SNAKE_BLOCK_SIDE*randInt(PLAYING_WIDTH/SNAKE_BLOCK_SIDE);
+		this.y = SNAKE_BLOCK_SIDE*randInt(PLAYING_HEIGHT/SNAKE_BLOCK_SIDE);
+	}
+	render() {
+		this.context.fillStyle = "#FFFFFF";
+		this.context.beginPath();
+		this.context.moveTo(this.x, this.y);
+		this.context.lineTo(this.x+MOVE_UNIT, this.y);
+		this.context.lineTo(this.x+(MOVE_UNIT/2), this.y+MOVE_UNIT);
+		this.context.fill();
 	}
 }
 
@@ -234,13 +302,18 @@ class SnakeGame {
 	context:any;
 	human:Snake;
 	players:Array<Snake>;
+	foods:Array<Food>;
 	constructor() {
 		this.canvas = $("canvas")[0];
 		this.context = this.canvas.getContext("2d");
 		this.human = new Snake(this.context, false);
 		this.players = [this.human];
 		$(document.body).keydown(this.handleKeydown.bind(this));
-		this.render();
+
+		this.foods = [];
+		this.setFoodInterval();
+		
+		window.setTimeout(this.render.bind(this), 1);
 	}
 	handleKeydown(e:JQueryKeyEventObject) {
 		if (e.keyCode == 13) {
@@ -257,12 +330,20 @@ class SnakeGame {
 		DISABLED = true;
 		$("#gameEnded-wrapper").show();
 	}
+	setFoodInterval() {
+		window.setTimeout(this.createFood.bind(this), 100);
+	}
+	createFood() {
+		this.foods.push(new Food(this.context));
+		this.setFoodInterval();
+	}
 	render() {
 		this.canvas.width = window.innerWidth;
 		this.canvas.height = window.innerHeight;
 		this.context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 		this.context.fillStyle = "black";
 		this.context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
 
 		for (var i in this.players) {
 			if (!DISABLED) {
@@ -274,14 +355,22 @@ class SnakeGame {
 			this.players[i].render();
 		}
 
+		for (var i in this.foods) {
+			this.foods[i].render();
+		}
+
 		if (!DISABLED) {
 			window.setTimeout(function() {
 				window.requestAnimationFrame(this.render.bind(this))
 			}.bind(this), 200);
 		}
 	}
+	log(txt:string) {
+		console.log("LOG: ", txt);
+	}
 }
-
+interface Window { game: SnakeGame}
+// interface HTMLElement {getContext}
 $(document).ready(function() {
 	window.game = new SnakeGame();
 })

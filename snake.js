@@ -12,6 +12,9 @@ OPPOSITES[DIRECTIONS.DOWN] = DIRECTIONS.UP;
 OPPOSITES[DIRECTIONS.LEFT] = DIRECTIONS.RIGHT;
 OPPOSITES[DIRECTIONS.RIGHT] = DIRECTIONS.LEFT;
 
+var VERTICALS = [DIRECTIONS.UP, DIRECTIONS.DOWN];
+var HORIZONTALS = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT];
+
 var PLAYING_WIDTH = window.screen.width;
 var PLAYING_HEIGHT = window.screen.height;
 var SNAKE_BLOCK_BASE = 10;
@@ -47,7 +50,6 @@ var TurnList = (function () {
         if (!this.turns[x]) {
             this.turns[x] = {};
         }
-        console.log("adding turn at ", x, y);
         this.turns[x][y] = direction;
     };
     TurnList.prototype.dropTurn = function (x, y) {
@@ -66,7 +68,7 @@ var TurnList = (function () {
 })();
 
 var SnakeComponent = (function () {
-    function SnakeComponent(snake, pos, x, y, color) {
+    function SnakeComponent(snake, pos, x, y, color, direction) {
         this.snake = snake;
         this.pos = pos;
         this.x = x;
@@ -74,6 +76,9 @@ var SnakeComponent = (function () {
         this.color = color;
         this.direction = DIRECTIONS.RIGHT;
         this.context = this.snake.context;
+        if (direction != null) {
+            this.direction = direction;
+        }
         if (!this.color) {
             this.color = "white";
         }
@@ -89,6 +94,7 @@ var SnakeComponent = (function () {
         var nextX = this.getNextX();
         var nextY = this.getNextY();
         if (nextX < 0 || nextX > PLAYING_WIDTH || nextY < 0 || nextY > PLAYING_HEIGHT) {
+            window.game.log("Snake exceeded playing area");
             return true;
         }
         var comp;
@@ -98,12 +104,28 @@ var SnakeComponent = (function () {
             if (comp == this)
                 continue;
             if (comp.getNextX() == nextX && comp.getNextY() == nextY) {
+                console.log("Collision between snake components: ", this, comp);
                 return true;
             }
         }
         return false;
     };
+    SnakeComponent.prototype.willGetFood = function () {
+        var f;
+        for (var i in window.game.foods) {
+            f = window.game.foods[i];
+            if (f.x == this.getNextX() && f.y == this.getNextY()) {
+                return f;
+            }
+        }
+        return null;
+    };
     SnakeComponent.prototype.move = function () {
+        var t = this.snake.turns.turnForCoord(this.x, this.y);
+        if (t) {
+            this.direction = t;
+        }
+
         var nextX, nextY;
         nextX = this.getNextX();
         nextY = this.getNextY();
@@ -111,7 +133,12 @@ var SnakeComponent = (function () {
         if (this.willCollide()) {
             return false;
         }
+
         this.setCoords(nextX, nextY);
+        var f = this.willGetFood();
+        if (f) {
+            this.snake.eatFood(f);
+        }
         return true;
     };
     SnakeComponent.prototype.getNextX = function () {
@@ -131,6 +158,20 @@ var SnakeComponent = (function () {
         } else {
             return this.y;
         }
+    };
+    SnakeComponent.prototype.getNextCoords = function () {
+        var nextX, nextY;
+        nextX = this.getNextX();
+        nextY = this.getNextY();
+        var d = this.snake.turns.turnForCoord(nextX, nextY);
+        if (d) {
+            var old = this.direction;
+            this.direction = d;
+            nextX = this.getNextX();
+            nextY = this.getNextY();
+            this.direction = old;
+        }
+        return [nextX, nextY];
     };
     SnakeComponent.prototype.render = function () {
         this.context.fillStyle = this.color;
@@ -153,11 +194,16 @@ var Snake = (function () {
 
         this.components = [];
         for (var i = 0; i < this.length; i++) {
-            this.components.push(new SnakeComponent(this, i, (this.length * SNAKE_BLOCK_SIDE) - i * SNAKE_BLOCK_SIDE, 0));
+            this.createComponent(i);
         }
         this.leadComponent = this.components[0];
-        console.log(this);
     }
+    Snake.prototype.createComponent = function (pos) {
+        this.addComponent(new SnakeComponent(this, pos, (this.length * SNAKE_BLOCK_SIDE) - pos * SNAKE_BLOCK_SIDE, 0));
+    };
+    Snake.prototype.addComponent = function (component) {
+        this.components.push(component);
+    };
     Snake.prototype.calculateSnakeWidth = function () {
         return this.length * (SNAKE_BLOCK_SIDE);
     };
@@ -176,33 +222,16 @@ var Snake = (function () {
         enumerable: true,
         configurable: true
     });
-
-    // willPassWall() {
-    // 	if (this.direction == DIRECTIONS.UP && this.y+this.totalLength+SNAKE_BLOCK_SIDE < 0) {
-    // 		return true;
-    // 	}
-    // 	else if (this.direction == DIRECTIONS.DOWN && this.y+this.totalLength+SNAKE_BLOCK_SIDE > window.innerHeight) {
-    // 		return true;
-    // 	}
-    // 	else if (this.direction == DIRECTIONS.LEFT && this.x-SNAKE_BLOCK_SIDE < 0) {
-    // 		return true;
-    // 	}
-    // 	else if (this.direction == DIRECTIONS.RIGHT && this.x+this.totalLength+SNAKE_BLOCK_SIDE > window.innerWidth) {
-    // 		return true;
-    // 	}
-    // 	else {
-    // 		return false;
-    // 	}
-    // }
     Snake.prototype.move = function (coords) {
         var direction;
         var component;
         for (var i = 0; i < this.length; i++) {
             component = this.components[i];
-            direction = this.turns.turnForCoord(component.x, component.y);
-            if (direction) {
-                component.direction = direction;
-            }
+
+            // direction = this.turns.turnForCoord(component.x, component.y);
+            // if (direction) {
+            // 	component.direction = direction;
+            // }
             var moveSuccessful = component.move();
             if (!moveSuccessful) {
                 return false;
@@ -213,14 +242,52 @@ var Snake = (function () {
         }
         ;
         return true;
-        // if (coords) {
-        // 	this.x = coords.x;
-        // 	this.y = coords.y;
-        // }
-        // else {
-        // }
+    };
+    Snake.prototype.eatFood = function (food) {
+        window.game.foods.splice(window.game.foods.indexOf(food), 1);
+        var last = this.components[this.length - 1];
+        var x, y;
+
+        switch (last.direction) {
+            case DIRECTIONS.UP:
+                x = last.x;
+                y = last.y + SNAKE_BLOCK_SIDE;
+                break;
+            case DIRECTIONS.DOWN:
+                x = last.x;
+                y = last.y - SNAKE_BLOCK_SIDE;
+                break;
+            case DIRECTIONS.LEFT:
+                x = last.x - SNAKE_BLOCK_SIDE;
+                y = last.y;
+                break;
+            case DIRECTIONS.RIGHT:
+                x = last.x + SNAKE_BLOCK_SIDE;
+                y = last.y;
+                break;
+        }
+
+        this.addComponent(new SnakeComponent(this, this.length, x, y, "white", last.direction));
+        this.length += 1;
     };
     return Snake;
+})();
+
+var Food = (function () {
+    function Food(context) {
+        this.context = context;
+        this.x = SNAKE_BLOCK_SIDE * randInt(PLAYING_WIDTH / SNAKE_BLOCK_SIDE);
+        this.y = SNAKE_BLOCK_SIDE * randInt(PLAYING_HEIGHT / SNAKE_BLOCK_SIDE);
+    }
+    Food.prototype.render = function () {
+        this.context.fillStyle = "#FFFFFF";
+        this.context.beginPath();
+        this.context.moveTo(this.x, this.y);
+        this.context.lineTo(this.x + MOVE_UNIT, this.y);
+        this.context.lineTo(this.x + (MOVE_UNIT / 2), this.y + MOVE_UNIT);
+        this.context.fill();
+    };
+    return Food;
 })();
 
 var SnakeGame = (function () {
@@ -230,7 +297,11 @@ var SnakeGame = (function () {
         this.human = new Snake(this.context, false);
         this.players = [this.human];
         $(document.body).keydown(this.handleKeydown.bind(this));
-        this.render();
+
+        this.foods = [];
+        this.setFoodInterval();
+
+        window.setTimeout(this.render.bind(this), 1);
     }
     SnakeGame.prototype.handleKeydown = function (e) {
         if (e.keyCode == 13) {
@@ -245,6 +316,13 @@ var SnakeGame = (function () {
     SnakeGame.prototype.endGame = function (player) {
         DISABLED = true;
         $("#gameEnded-wrapper").show();
+    };
+    SnakeGame.prototype.setFoodInterval = function () {
+        window.setTimeout(this.createFood.bind(this), 100);
+    };
+    SnakeGame.prototype.createFood = function () {
+        this.foods.push(new Food(this.context));
+        this.setFoodInterval();
     };
     SnakeGame.prototype.render = function () {
         this.canvas.width = window.innerWidth;
@@ -263,15 +341,23 @@ var SnakeGame = (function () {
             this.players[i].render();
         }
 
+        for (var i in this.foods) {
+            this.foods[i].render();
+        }
+
         if (!DISABLED) {
             window.setTimeout(function () {
                 window.requestAnimationFrame(this.render.bind(this));
             }.bind(this), 200);
         }
     };
+    SnakeGame.prototype.log = function (txt) {
+        console.log("LOG: ", txt);
+    };
     return SnakeGame;
 })();
 
+// interface HTMLElement {getContext}
 $(document).ready(function () {
     window.game = new SnakeGame();
 });
