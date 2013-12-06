@@ -134,12 +134,12 @@ class SnakeComponent implements Drawable {
 		if (this.willCollide()) {
 			return false;
 		}
-
-		this.setCoords(nextX, nextY);
 		var f:Food = this.willGetFood();
 		if (f) {
 			this.snake.eatFood(f);
 		}
+
+		this.setCoords(nextX, nextY);
 		return true;
 	}
 	getNextX() {

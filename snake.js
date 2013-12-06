@@ -128,12 +128,12 @@ var SnakeComponent = (function () {
         if (this.willCollide()) {
             return false;
         }
-
-        this.setCoords(nextX, nextY);
         var f = this.willGetFood();
         if (f) {
             this.snake.eatFood(f);
         }
+
+        this.setCoords(nextX, nextY);
         return true;
     };
     SnakeComponent.prototype.getNextX = function () {
