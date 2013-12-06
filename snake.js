@@ -121,11 +121,6 @@ var SnakeComponent = (function () {
         return null;
     };
     SnakeComponent.prototype.move = function () {
-        var t = this.snake.turns.turnForCoord(this.x, this.y);
-        if (t) {
-            this.direction = t;
-        }
-
         var nextX, nextY;
         nextX = this.getNextX();
         nextY = this.getNextY();
@@ -158,20 +153,6 @@ var SnakeComponent = (function () {
         } else {
             return this.y;
         }
-    };
-    SnakeComponent.prototype.getNextCoords = function () {
-        var nextX, nextY;
-        nextX = this.getNextX();
-        nextY = this.getNextY();
-        var d = this.snake.turns.turnForCoord(nextX, nextY);
-        if (d) {
-            var old = this.direction;
-            this.direction = d;
-            nextX = this.getNextX();
-            nextY = this.getNextY();
-            this.direction = old;
-        }
-        return [nextX, nextY];
     };
     SnakeComponent.prototype.render = function () {
         this.context.fillStyle = this.color;
@@ -227,11 +208,10 @@ var Snake = (function () {
         var component;
         for (var i = 0; i < this.length; i++) {
             component = this.components[i];
-
-            // direction = this.turns.turnForCoord(component.x, component.y);
-            // if (direction) {
-            // 	component.direction = direction;
-            // }
+            direction = this.turns.turnForCoord(component.x, component.y);
+            if (direction) {
+                component.direction = direction;
+            }
             var moveSuccessful = component.move();
             if (!moveSuccessful) {
                 return false;
@@ -258,11 +238,11 @@ var Snake = (function () {
                 y = last.y - SNAKE_BLOCK_SIDE;
                 break;
             case DIRECTIONS.LEFT:
-                x = last.x - SNAKE_BLOCK_SIDE;
+                x = last.x + SNAKE_BLOCK_SIDE;
                 y = last.y;
                 break;
             case DIRECTIONS.RIGHT:
-                x = last.x + SNAKE_BLOCK_SIDE;
+                x = last.x - SNAKE_BLOCK_SIDE;
                 y = last.y;
                 break;
         }
