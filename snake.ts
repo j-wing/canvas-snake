@@ -17,8 +17,8 @@ OPPOSITES[DIRECTIONS.RIGHT] = DIRECTIONS.LEFT;
 var VERTICALS:Array = [DIRECTIONS.UP, DIRECTIONS.DOWN];
 var HORIZONTALS:Array = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT];
 
-var PLAYING_WIDTH:number = window.screen.width;
-var PLAYING_HEIGHT:number = window.screen.height;
+var PLAYING_WIDTH:number = window.innerWidth;
+var PLAYING_HEIGHT:number = window.innerHeight-50;
 var SNAKE_BLOCK_BASE:number = 10;
 var SNAKE_BLOCK_SIDE:number = 12;
 var DISABLED = false;
@@ -275,6 +275,7 @@ class Snake implements Drawable {
 
 		this.addComponent(new SnakeComponent(this, this.length, x, y, "white", last.direction));
 		this.length += 1;
+		window.game.incrementScore();
 	}
 }
 
@@ -282,8 +283,8 @@ class Food implements Drawable {
 	x:number;
 	y:number;
 	constructor(public context) {
-		this.x = SNAKE_BLOCK_SIDE*randInt(PLAYING_WIDTH/SNAKE_BLOCK_SIDE);
-		this.y = SNAKE_BLOCK_SIDE*randInt(PLAYING_HEIGHT/SNAKE_BLOCK_SIDE);
+		this.x = SNAKE_BLOCK_SIDE*randInt((PLAYING_WIDTH-SNAKE_BLOCK_SIDE)/SNAKE_BLOCK_SIDE);
+		this.y = SNAKE_BLOCK_SIDE*randInt((PLAYING_HEIGHT-SNAKE_BLOCK_SIDE)/SNAKE_BLOCK_SIDE);
 	}
 	render() {
 		this.context.fillStyle = "#FFFFFF";
@@ -301,6 +302,7 @@ class SnakeGame {
 	human:Snake;
 	players:Array<Snake>;
 	foods:Array<Food>;
+	score:number=0;
 	constructor() {
 		this.canvas = $("canvas")[0];
 		this.context = this.canvas.getContext("2d");
@@ -324,6 +326,14 @@ class SnakeGame {
 			this.human.direction = (e.keyCode);
 		}
 	}
+	incrementScore(amount?:number) {
+		if (amount == null) {
+			amount = 1;
+		}
+		console.log(amount)
+		this.score += amount;
+		$("#score-value").text(this.score);
+	}
 	endGame(player:Snake) {
 		DISABLED = true;
 		$("#gameEnded-wrapper").show();
@@ -341,6 +351,12 @@ class SnakeGame {
 		this.context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 		this.context.fillStyle = "black";
 		this.context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+		this.context.strokeStyle = "white";
+		this.context.beginPath();
+		this.context.moveTo(0, PLAYING_HEIGHT);
+		this.context.lineTo(PLAYING_WIDTH, PLAYING_HEIGHT);
+		this.context.stroke();
+		this.context.closePath();
 
 
 		for (var i in this.players) {
@@ -368,7 +384,6 @@ class SnakeGame {
 	}
 }
 interface Window { game: SnakeGame}
-// interface HTMLElement {getContext}
 $(document).ready(function() {
 	window.game = new SnakeGame();
 })

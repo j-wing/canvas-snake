@@ -15,6 +15,16 @@
 	z-index: 1000;
 }
 
+#score {
+	position:absolute;
+	bottom: 10px;
+	left:0px;
+	color: white;
+	width:100%;
+	z-index: 1000;
+	font-size: 24px;
+}
+
 canvas {
 	position: absolute;
 	z-index: 1;

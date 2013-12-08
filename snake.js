@@ -16,8 +16,8 @@ OPPOSITES[DIRECTIONS.RIGHT] = DIRECTIONS.LEFT;
 var VERTICALS = [DIRECTIONS.UP, DIRECTIONS.DOWN];
 var HORIZONTALS = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT];
 
-var PLAYING_WIDTH = window.screen.width;
-var PLAYING_HEIGHT = window.screen.height;
+var PLAYING_WIDTH = window.innerWidth;
+var PLAYING_HEIGHT = window.innerHeight - 50;
 var SNAKE_BLOCK_BASE = 10;
 var SNAKE_BLOCK_SIDE = 12;
 var DISABLED = false;
@@ -267,6 +267,7 @@ var Snake = (function () {
 
         this.addComponent(new SnakeComponent(this, this.length, x, y, "white", last.direction));
         this.length += 1;
+        window.game.incrementScore();
     };
     return Snake;
 })();
@@ -274,8 +275,8 @@ var Snake = (function () {
 var Food = (function () {
     function Food(context) {
         this.context = context;
-        this.x = SNAKE_BLOCK_SIDE * randInt(PLAYING_WIDTH / SNAKE_BLOCK_SIDE);
-        this.y = SNAKE_BLOCK_SIDE * randInt(PLAYING_HEIGHT / SNAKE_BLOCK_SIDE);
+        this.x = SNAKE_BLOCK_SIDE * randInt((PLAYING_WIDTH - SNAKE_BLOCK_SIDE) / SNAKE_BLOCK_SIDE);
+        this.y = SNAKE_BLOCK_SIDE * randInt((PLAYING_HEIGHT - SNAKE_BLOCK_SIDE) / SNAKE_BLOCK_SIDE);
     }
     Food.prototype.render = function () {
         this.context.fillStyle = "#FFFFFF";
@@ -290,6 +291,7 @@ var Food = (function () {
 
 var SnakeGame = (function () {
     function SnakeGame() {
+        this.score = 0;
         this.canvas = $("canvas")[0];
         this.context = this.canvas.getContext("2d");
         this.human = new Snake(this.context, false);
@@ -311,6 +313,14 @@ var SnakeGame = (function () {
             this.human.direction = (e.keyCode);
         }
     };
+    SnakeGame.prototype.incrementScore = function (amount) {
+        if (amount == null) {
+            amount = 1;
+        }
+        console.log(amount);
+        this.score += amount;
+        $("#score-value").text(this.score);
+    };
     SnakeGame.prototype.endGame = function (player) {
         DISABLED = true;
         $("#gameEnded-wrapper").show();
@@ -328,6 +338,12 @@ var SnakeGame = (function () {
         this.context.clearRect(0, 0, window.innerWidth, window.innerHeight);
         this.context.fillStyle = "black";
         this.context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        this.context.strokeStyle = "white";
+        this.context.beginPath();
+        this.context.moveTo(0, PLAYING_HEIGHT);
+        this.context.lineTo(PLAYING_WIDTH, PLAYING_HEIGHT);
+        this.context.stroke();
+        this.context.closePath();
 
         for (var i in this.players) {
             if (!DISABLED) {
@@ -355,7 +371,6 @@ var SnakeGame = (function () {
     return SnakeGame;
 })();
 
-// interface HTMLElement {getContext}
 $(document).ready(function () {
     window.game = new SnakeGame();
 });
