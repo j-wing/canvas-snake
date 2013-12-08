@@ -1,3 +1,9 @@
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 /// <reference path="jquery.d.ts"/>
 /// <reference path="underscore.d.ts"/>
 var DEFAULT_LENGTH = 5;
@@ -21,6 +27,7 @@ var SNAKE_BLOCK_BASE = 10;
 var SNAKE_BLOCK_SIDE = 12;
 var DISABLED = false;
 var MOVE_UNIT = 12;
+var SNAKE_COLORS = ["blue", "red", "gray"];
 
 function makeRange(begin, end) {
     if (end == undefined || end == null) {
@@ -177,6 +184,9 @@ var Snake = (function () {
         if (!this.isAI) {
             this.x = 0;
             this.y = 0;
+            this.color = "white";
+        } else {
+            this.color = SNAKE_COLORS[_.random(0, 2)];
         }
         this.snakeWidth = this.calculateSnakeWidth();
         this.turns = new TurnList();
@@ -188,7 +198,7 @@ var Snake = (function () {
         this.leadComponent = this.components[0];
     }
     Snake.prototype.createComponent = function (pos) {
-        this.addComponent(new SnakeComponent(this, pos, (this.length * SNAKE_BLOCK_SIDE) - pos * SNAKE_BLOCK_SIDE, 0));
+        this.addComponent(new SnakeComponent(this, pos, (this.length * SNAKE_BLOCK_SIDE) - pos * SNAKE_BLOCK_SIDE, 0, this.color));
     };
     Snake.prototype.addComponent = function (component) {
         this.components.push(component);
@@ -263,6 +273,15 @@ var Snake = (function () {
     return Snake;
 })();
 
+var AISnake = (function (_super) {
+    __extends(AISnake, _super);
+    function AISnake(context) {
+        _super.call(this, context, true);
+        this.context = context;
+    }
+    return AISnake;
+})(Snake);
+
 var Food = (function () {
     function Food(context) {
         this.context = context;
@@ -334,6 +353,7 @@ var SnakeGame = (function () {
         if (multiplyByDifficulty) {
             amount = amount * this.difficulty;
         }
+
         this.score += amount;
         window.localStorage['lastScore'] = this.score;
         $("#score-value").text(this.score);

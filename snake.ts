@@ -22,7 +22,7 @@ var SNAKE_BLOCK_BASE:number = 10;
 var SNAKE_BLOCK_SIDE:number = 12;
 var DISABLED = false;
 var MOVE_UNIT:number = 12;
-
+var SNAKE_COLORS = ["blue", "red", "gray"]
 interface Drawable {
 	context:any;
 	render:() => void;
@@ -186,13 +186,19 @@ class Snake implements Drawable {
 	components:Array<SnakeComponent>;
 	turns:TurnList;
 	leadComponent:SnakeComponent;
+	color:string;
 	constructor(public context:any, public isAI:boolean){
 		if (!this.isAI) {
 			this.x = 0;
 			this.y = 0;
+			this.color = "white";
+		}
+		else {
+			this.color = SNAKE_COLORS[_.random(0, 2)];
 		}
 		this.snakeWidth = this.calculateSnakeWidth();
 		this.turns = new TurnList();
+
 		
 		this.components = [];
 		for (var i=0;i<this.length;i++) {
@@ -201,7 +207,7 @@ class Snake implements Drawable {
 		this.leadComponent = this.components[0];
 	}
 	createComponent(pos:number) {
-		this.addComponent(new SnakeComponent(this, pos, (this.length*SNAKE_BLOCK_SIDE)-pos*SNAKE_BLOCK_SIDE, 0));
+		this.addComponent(new SnakeComponent(this, pos, (this.length*SNAKE_BLOCK_SIDE)-pos*SNAKE_BLOCK_SIDE, 0, this.color));
 	}
 	addComponent(component:SnakeComponent) {
 		this.components.push(component);
@@ -267,6 +273,12 @@ class Snake implements Drawable {
 		this.addComponent(new SnakeComponent(this, this.length, x, y, "white", last.direction));
 		this.length += 1;
 		window.game.incrementScore();
+	}
+}
+
+class AISnake extends Snake {
+	constructor(public context) {
+		super(context, true);
 	}
 }
 
@@ -349,7 +361,7 @@ class SnakeGame {
 		if (multiplyByDifficulty) {
 			amount = amount * this.difficulty;
 		}
-		
+
 		this.score += amount;
 		window.localStorage['lastScore'] = this.score;
 		$("#score-value").text(this.score);
