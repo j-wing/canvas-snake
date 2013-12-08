@@ -342,11 +342,14 @@ class SnakeGame {
 		}
 		this._updateDifficultyText();
 	}
-	incrementScore(amount?:number) {
+	incrementScore(amount?:number, multiplyByDifficulty:boolean=true) {
 		if (amount == null) {
 			amount = 1;
 		}
-		console.log(amount)
+		if (multiplyByDifficulty) {
+			amount = amount * this.difficulty;
+		}
+		
 		this.score += amount;
 		window.localStorage['lastScore'] = this.score;
 		$("#score-value").text(this.score);

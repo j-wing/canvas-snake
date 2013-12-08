@@ -326,11 +326,14 @@ var SnakeGame = (function () {
         }
         this._updateDifficultyText();
     };
-    SnakeGame.prototype.incrementScore = function (amount) {
+    SnakeGame.prototype.incrementScore = function (amount, multiplyByDifficulty) {
+        if (typeof multiplyByDifficulty === "undefined") { multiplyByDifficulty = true; }
         if (amount == null) {
             amount = 1;
         }
-        console.log(amount);
+        if (multiplyByDifficulty) {
+            amount = amount * this.difficulty;
+        }
         this.score += amount;
         window.localStorage['lastScore'] = this.score;
         $("#score-value").text(this.score);
