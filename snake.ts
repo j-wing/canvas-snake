@@ -1,4 +1,5 @@
 /// <reference path="jquery.d.ts"/>
+/// <reference path="underscore.d.ts"/>
 
 var DEFAULT_LENGTH:number = 5;
 var DIRECTIONS:any = {
@@ -109,7 +110,7 @@ class SnakeComponent implements Drawable {
 		for (var i=0;i<this.snake.length;i++) {
 			comp = this.snake.components[i];
 			if (comp == this) continue;
-			if (comp.getNextX() == nextX && comp.getNextY() == nextY) {
+			if (_.isEqual(comp.getNextCoords(),this.getNextCoords())) {
 				console.log("Collision between snake components: ", this, comp);
 				return true;
 			}
@@ -165,6 +166,21 @@ class SnakeComponent implements Drawable {
 		}
 
 	}
+	getNextCoords() {
+		var nextX, nextY;
+		nextX = this.getNextX();
+		nextY = this.getNextY();
+	// 	var d = this.snake.turns.turnForCoord(nextX, nextY);
+	// 	if (d) {
+	// 		console.log("there's a d", d)
+	// 		var old = this.direction;
+	// 		this.direction = d;
+	// 		nextX = this.getNextX();
+	// 		nextY = this.getNextY();
+	// 		this.direction = old;
+	// 	}
+		return [nextX, nextY];
+	}
 	render() {
 		this.context.fillStyle = this.color;
 		this.context.fillRect(this.x, this.y, SNAKE_BLOCK_BASE, SNAKE_BLOCK_BASE);
@@ -216,6 +232,7 @@ class Snake implements Drawable {
 	move(coords?:CoordinatePair) {
 		var direction:number;
 		var component:SnakeComponent;
+		var coords = [];
 		for (var i=0;i<this.length;i++) {
 			component = this.components[i];
 			direction = this.turns.turnForCoord(component.x, component.y);

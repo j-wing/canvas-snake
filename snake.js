@@ -1,4 +1,5 @@
 /// <reference path="jquery.d.ts"/>
+/// <reference path="underscore.d.ts"/>
 var DEFAULT_LENGTH = 5;
 var DIRECTIONS = {
     "UP": 38,
@@ -103,7 +104,7 @@ var SnakeComponent = (function () {
             comp = this.snake.components[i];
             if (comp == this)
                 continue;
-            if (comp.getNextX() == nextX && comp.getNextY() == nextY) {
+            if (_.isEqual(comp.getNextCoords(), this.getNextCoords())) {
                 console.log("Collision between snake components: ", this, comp);
                 return true;
             }
@@ -153,6 +154,22 @@ var SnakeComponent = (function () {
         } else {
             return this.y;
         }
+    };
+    SnakeComponent.prototype.getNextCoords = function () {
+        var nextX, nextY;
+        nextX = this.getNextX();
+        nextY = this.getNextY();
+
+        // 	var d = this.snake.turns.turnForCoord(nextX, nextY);
+        // 	if (d) {
+        // 		console.log("there's a d", d)
+        // 		var old = this.direction;
+        // 		this.direction = d;
+        // 		nextX = this.getNextX();
+        // 		nextY = this.getNextY();
+        // 		this.direction = old;
+        // 	}
+        return [nextX, nextY];
     };
     SnakeComponent.prototype.render = function () {
         this.context.fillStyle = this.color;
@@ -206,6 +223,7 @@ var Snake = (function () {
     Snake.prototype.move = function (coords) {
         var direction;
         var component;
+        var coords = [];
         for (var i = 0; i < this.length; i++) {
             component = this.components[i];
             direction = this.turns.turnForCoord(component.x, component.y);
