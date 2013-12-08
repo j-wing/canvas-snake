@@ -284,7 +284,7 @@ class Food implements Drawable {
 	y:number;
 	constructor(public context) {
 		this.x = SNAKE_BLOCK_SIDE*randInt((PLAYING_WIDTH-SNAKE_BLOCK_SIDE)/SNAKE_BLOCK_SIDE);
-		this.y = SNAKE_BLOCK_SIDE*randInt((PLAYING_HEIGHT-SNAKE_BLOCK_SIDE)/SNAKE_BLOCK_SIDE);
+		this.y = SNAKE_BLOCK_SIDE*randInt((PLAYING_HEIGHT-SNAKE_BLOCK_SIDE*2)/SNAKE_BLOCK_SIDE);
 	}
 	render() {
 		this.context.fillStyle = "#FFFFFF";
@@ -303,7 +303,7 @@ class SnakeGame {
 	players:Array<Snake>;
 	foods:Array<Food>;
 	score:number=0;
-	difficulty:number=1;
+	difficulty:number;
 	constructor() {
 		this.canvas = $("canvas")[0];
 		this.context = this.canvas.getContext("2d");
@@ -313,6 +313,7 @@ class SnakeGame {
 
 		this.foods = [];
 		this.setFoodInterval();
+		this.loadDifficulty();
 		$("#difficulty").click(this.handleDifficultyClick.bind(this));
 		
 		window.setTimeout(this.render.bind(this), 1);
@@ -329,13 +330,26 @@ class SnakeGame {
 		}
 	}
 	handleDifficultyClick(e:JQueryMouseEventObject) {
-		if (this.difficulty == 10) {
+		if (this.difficulty >= 10) {
 			this.difficulty = 1;
 		}
 		else {
 			this.difficulty += 1;
 		}
+		window.localStorage['difficulty'] = this.difficulty;
+		this._updateDifficultyText();
+	}
+	_updateDifficultyText() {
 		$("#difficulty-value").text(this.difficulty);
+	}
+	loadDifficulty() {
+		if (window.localStorage['difficulty']) {
+			this.difficulty = window.parseInt(window.localStorage['difficulty']);
+		}
+		else {
+			this.difficulty = 1;
+		}
+		this._updateDifficultyText();
 	}
 	incrementScore(amount?:number) {
 		if (amount == null) {
@@ -343,6 +357,7 @@ class SnakeGame {
 		}
 		console.log(amount)
 		this.score += amount;
+		window.localStorage['lastScore'] = this.score;
 		$("#score-value").text(this.score);
 	}
 	endGame(player:Snake) {
@@ -363,6 +378,8 @@ class SnakeGame {
 		this.context.fillStyle = "black";
 		this.context.fillRect(0, 0, window.innerWidth, window.innerHeight);
 		this.context.strokeStyle = "white";
+		
+		// lower boundary
 		this.context.beginPath();
 		this.context.moveTo(0, PLAYING_HEIGHT);
 		this.context.lineTo(PLAYING_WIDTH, PLAYING_HEIGHT);
@@ -394,7 +411,7 @@ class SnakeGame {
 		console.log("LOG: ", txt);
 	}
 }
-interface Window { game: SnakeGame}
+interface Window { game: SnakeGame; parseInt;}
 $(document).ready(function() {
 	window.game = new SnakeGame();
 })

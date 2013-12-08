@@ -276,7 +276,7 @@ var Food = (function () {
     function Food(context) {
         this.context = context;
         this.x = SNAKE_BLOCK_SIDE * randInt((PLAYING_WIDTH - SNAKE_BLOCK_SIDE) / SNAKE_BLOCK_SIDE);
-        this.y = SNAKE_BLOCK_SIDE * randInt((PLAYING_HEIGHT - SNAKE_BLOCK_SIDE) / SNAKE_BLOCK_SIDE);
+        this.y = SNAKE_BLOCK_SIDE * randInt((PLAYING_HEIGHT - SNAKE_BLOCK_SIDE * 2) / SNAKE_BLOCK_SIDE);
     }
     Food.prototype.render = function () {
         this.context.fillStyle = "#FFFFFF";
@@ -292,7 +292,6 @@ var Food = (function () {
 var SnakeGame = (function () {
     function SnakeGame() {
         this.score = 0;
-        this.difficulty = 1;
         this.canvas = $("canvas")[0];
         this.context = this.canvas.getContext("2d");
         this.human = new Snake(this.context, false);
@@ -301,6 +300,7 @@ var SnakeGame = (function () {
 
         this.foods = [];
         this.setFoodInterval();
+        this.loadDifficulty();
         $("#difficulty").click(this.handleDifficultyClick.bind(this));
 
         window.setTimeout(this.render.bind(this), 1);
@@ -316,12 +316,24 @@ var SnakeGame = (function () {
         }
     };
     SnakeGame.prototype.handleDifficultyClick = function (e) {
-        if (this.difficulty == 10) {
+        if (this.difficulty >= 10) {
             this.difficulty = 1;
         } else {
             this.difficulty += 1;
         }
+        window.localStorage['difficulty'] = this.difficulty;
+        this._updateDifficultyText();
+    };
+    SnakeGame.prototype._updateDifficultyText = function () {
         $("#difficulty-value").text(this.difficulty);
+    };
+    SnakeGame.prototype.loadDifficulty = function () {
+        if (window.localStorage['difficulty']) {
+            this.difficulty = window.parseInt(window.localStorage['difficulty']);
+        } else {
+            this.difficulty = 1;
+        }
+        this._updateDifficultyText();
     };
     SnakeGame.prototype.incrementScore = function (amount) {
         if (amount == null) {
@@ -329,6 +341,7 @@ var SnakeGame = (function () {
         }
         console.log(amount);
         this.score += amount;
+        window.localStorage['lastScore'] = this.score;
         $("#score-value").text(this.score);
     };
     SnakeGame.prototype.endGame = function (player) {
@@ -349,6 +362,8 @@ var SnakeGame = (function () {
         this.context.fillStyle = "black";
         this.context.fillRect(0, 0, window.innerWidth, window.innerHeight);
         this.context.strokeStyle = "white";
+
+        // lower boundary
         this.context.beginPath();
         this.context.moveTo(0, PLAYING_HEIGHT);
         this.context.lineTo(PLAYING_WIDTH, PLAYING_HEIGHT);
