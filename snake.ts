@@ -16,7 +16,6 @@ OPPOSITES[DIRECTIONS.RIGHT] = DIRECTIONS.LEFT;
 
 var VERTICALS:Array = [DIRECTIONS.UP, DIRECTIONS.DOWN];
 var HORIZONTALS:Array = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT];
-
 var PLAYING_WIDTH:number = window.innerWidth;
 var PLAYING_HEIGHT:number = window.innerHeight-50;
 var SNAKE_BLOCK_BASE:number = 10;
@@ -44,14 +43,6 @@ function makeRange(begin:number, end?:number) {
 		res.push(i);
 	}
 	return res;
-}
-
-function randInt(min:number, max?:number) {
-	if (max == null) {
-		max = min;
-		min = 0;
-	}
-	return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 class TurnList {
@@ -283,8 +274,8 @@ class Food implements Drawable {
 	x:number;
 	y:number;
 	constructor(public context) {
-		this.x = SNAKE_BLOCK_SIDE*randInt((PLAYING_WIDTH-SNAKE_BLOCK_SIDE)/SNAKE_BLOCK_SIDE);
-		this.y = SNAKE_BLOCK_SIDE*randInt((PLAYING_HEIGHT-SNAKE_BLOCK_SIDE*2)/SNAKE_BLOCK_SIDE);
+		this.x = SNAKE_BLOCK_SIDE*_.random((PLAYING_WIDTH-SNAKE_BLOCK_SIDE)/SNAKE_BLOCK_SIDE);
+		this.y = SNAKE_BLOCK_SIDE*_.random((PLAYING_HEIGHT-SNAKE_BLOCK_SIDE*2)/SNAKE_BLOCK_SIDE);
 	}
 	render() {
 		this.context.fillStyle = "#FFFFFF";
@@ -365,7 +356,7 @@ class SnakeGame {
 		$("#gameEnded-wrapper").show();
 	}
 	setFoodInterval() {
-		window.setTimeout(this.createFood.bind(this), 100);
+		window.setTimeout(this.createFood.bind(this), 500*_.random(1, 10));
 	}
 	createFood() {
 		this.foods.push(new Food(this.context));

@@ -15,7 +15,6 @@ OPPOSITES[DIRECTIONS.RIGHT] = DIRECTIONS.LEFT;
 
 var VERTICALS = [DIRECTIONS.UP, DIRECTIONS.DOWN];
 var HORIZONTALS = [DIRECTIONS.LEFT, DIRECTIONS.RIGHT];
-
 var PLAYING_WIDTH = window.innerWidth;
 var PLAYING_HEIGHT = window.innerHeight - 50;
 var SNAKE_BLOCK_BASE = 10;
@@ -33,14 +32,6 @@ function makeRange(begin, end) {
         res.push(i);
     }
     return res;
-}
-
-function randInt(min, max) {
-    if (max == null) {
-        max = min;
-        min = 0;
-    }
-    return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 var TurnList = (function () {
@@ -275,8 +266,8 @@ var Snake = (function () {
 var Food = (function () {
     function Food(context) {
         this.context = context;
-        this.x = SNAKE_BLOCK_SIDE * randInt((PLAYING_WIDTH - SNAKE_BLOCK_SIDE) / SNAKE_BLOCK_SIDE);
-        this.y = SNAKE_BLOCK_SIDE * randInt((PLAYING_HEIGHT - SNAKE_BLOCK_SIDE * 2) / SNAKE_BLOCK_SIDE);
+        this.x = SNAKE_BLOCK_SIDE * _.random((PLAYING_WIDTH - SNAKE_BLOCK_SIDE) / SNAKE_BLOCK_SIDE);
+        this.y = SNAKE_BLOCK_SIDE * _.random((PLAYING_HEIGHT - SNAKE_BLOCK_SIDE * 2) / SNAKE_BLOCK_SIDE);
     }
     Food.prototype.render = function () {
         this.context.fillStyle = "#FFFFFF";
@@ -349,7 +340,7 @@ var SnakeGame = (function () {
         $("#gameEnded-wrapper").show();
     };
     SnakeGame.prototype.setFoodInterval = function () {
-        window.setTimeout(this.createFood.bind(this), 100);
+        window.setTimeout(this.createFood.bind(this), 500 * _.random(1, 10));
     };
     SnakeGame.prototype.createFood = function () {
         this.foods.push(new Food(this.context));
