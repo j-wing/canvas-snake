@@ -292,6 +292,7 @@ var Food = (function () {
 var SnakeGame = (function () {
     function SnakeGame() {
         this.score = 0;
+        this.difficulty = 1;
         this.canvas = $("canvas")[0];
         this.context = this.canvas.getContext("2d");
         this.human = new Snake(this.context, false);
@@ -300,6 +301,7 @@ var SnakeGame = (function () {
 
         this.foods = [];
         this.setFoodInterval();
+        $("#difficulty").click(this.handleDifficultyClick.bind(this));
 
         window.setTimeout(this.render.bind(this), 1);
     }
@@ -312,6 +314,14 @@ var SnakeGame = (function () {
         } else if ([37, 38, 39, 40].indexOf(e.keyCode) != -1) {
             this.human.direction = (e.keyCode);
         }
+    };
+    SnakeGame.prototype.handleDifficultyClick = function (e) {
+        if (this.difficulty == 10) {
+            this.difficulty = 1;
+        } else {
+            this.difficulty += 1;
+        }
+        $("#difficulty-value").text(this.difficulty);
     };
     SnakeGame.prototype.incrementScore = function (amount) {
         if (amount == null) {
@@ -362,7 +372,7 @@ var SnakeGame = (function () {
         if (!DISABLED) {
             window.setTimeout(function () {
                 window.requestAnimationFrame(this.render.bind(this));
-            }.bind(this), 200);
+            }.bind(this), 1000 / (3 + (this.difficulty * 2)));
         }
     };
     SnakeGame.prototype.log = function (txt) {

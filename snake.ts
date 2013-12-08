@@ -303,6 +303,7 @@ class SnakeGame {
 	players:Array<Snake>;
 	foods:Array<Food>;
 	score:number=0;
+	difficulty:number=1;
 	constructor() {
 		this.canvas = $("canvas")[0];
 		this.context = this.canvas.getContext("2d");
@@ -312,6 +313,7 @@ class SnakeGame {
 
 		this.foods = [];
 		this.setFoodInterval();
+		$("#difficulty").click(this.handleDifficultyClick.bind(this));
 		
 		window.setTimeout(this.render.bind(this), 1);
 	}
@@ -325,6 +327,15 @@ class SnakeGame {
 		else if ([37, 38, 39, 40].indexOf(e.keyCode) != -1){
 			this.human.direction = (e.keyCode);
 		}
+	}
+	handleDifficultyClick(e:JQueryMouseEventObject) {
+		if (this.difficulty == 10) {
+			this.difficulty = 1;
+		}
+		else {
+			this.difficulty += 1;
+		}
+		$("#difficulty-value").text(this.difficulty);
 	}
 	incrementScore(amount?:number) {
 		if (amount == null) {
@@ -376,7 +387,7 @@ class SnakeGame {
 		if (!DISABLED) {
 			window.setTimeout(function() {
 				window.requestAnimationFrame(this.render.bind(this))
-			}.bind(this), 200);
+			}.bind(this), 1000/(3+(this.difficulty * 2)));
 		}
 	}
 	log(txt:string) {
